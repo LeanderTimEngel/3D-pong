@@ -48,8 +48,8 @@ A modern implementation of the classic Pong game in 3D using Three.js.
 
 Built with:
 - Three.js for 3D graphics
-- Modern JavaScript (ES6+)
-- HTML5 and CSS3
+- Plain JavaScript
+- HTML and CSS
 
 ## Sound Credits
 
