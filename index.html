@@ -3,21 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Pong</title>
+    <title>3D Pong - Modern Gaming Experience</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 </head>
 <body>
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <h2>Loading Game Assets...</h2>
+            <p>Preparing your gaming experience</p>
+        </div>
+    </div>
+
     <div id="menu" class="menu">
         <h1>3D PONG</h1>
         <div class="menu-options">
-            <button id="singleplayer">Single Player</button>
-            <button id="multiplayer">Two Players</button>
+            <button id="singleplayer" class="glow-effect">Single Player</button>
+            <button id="multiplayer" class="glow-effect">Two Players</button>
             <div class="settings">
                 <label for="difficulty">AI Difficulty:</label>
                 <select id="difficulty">
                     <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
+                    <option value="medium" selected>Medium</option>
                     <option value="hard">Hard</option>
                 </select>
                 <label for="aiSeed">AI Seed (optional):</label>
@@ -45,9 +53,9 @@
     <div id="pause-menu" class="menu hidden">
         <h2>PAUSED</h2>
         <div class="menu-options">
-            <button id="resume">Resume</button>
-            <button id="restart">Restart</button>
-            <button id="quit">Back to Menu</button>
+            <button id="resume" class="glow-effect">Resume</button>
+            <button id="restart" class="glow-effect">Restart</button>
+            <button id="quit" class="glow-effect">Back to Menu</button>
         </div>
     </div>
 

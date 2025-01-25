@@ -8,17 +8,28 @@ const BALL_RADIUS = 0.2;
 const BALL_SPEED = 0.15;
 const PADDLE_SPEED = 0.2;
 
-// Sound effects
+// Sound effects setup with error handling
 const sounds = {
-    paddle: new Audio('sounds/paddle_hit.mp3'),
-    wall: new Audio('sounds/wall_hit.mp3'),
-    score: new Audio('sounds/score.mp3'),
-    background: new Audio('sounds/background.mp3')
+    paddle: new Audio(),
+    wall: new Audio(),
+    score: new Audio(),
+    background: new Audio()
 };
 
-// Configure background music
-sounds.background.loop = true;
-sounds.background.volume = 0.3;
+// Try to load sounds but don't block the game
+try {
+    sounds.paddle.src = 'sounds/paddle_hit.mp3';
+    sounds.wall.src = 'sounds/wall_hit.mp3';
+    sounds.score.src = 'sounds/score.mp3';
+    sounds.background.src = 'sounds/background.mp3';
+    sounds.background.loop = true;
+    sounds.background.volume = 0.3;
+} catch (e) {
+    console.log('Sound loading failed, continuing without sound');
+}
+
+// Hide loading screen immediately
+document.getElementById('loading-overlay').style.display = 'none';
 
 // Particle system for ball trail
 const particleCount = 100;
@@ -180,10 +191,9 @@ scene.add(centerLine);
 // Add particle system to scene
 scene.add(particleSystem);
 
-// Camera position
-camera.position.y = 15;
-camera.position.z = 0;
-camera.rotation.x = -Math.PI / 3;
+// Camera position for better gameplay view
+camera.position.set(0, 20, -5); // Move camera back and up
+camera.lookAt(0, 0, 0); // Look at the center of the arena
 
 // Input handling
 const keys = {
@@ -252,11 +262,15 @@ function togglePause() {
     isPaused = !isPaused;
     if (isPaused) {
         document.getElementById('pause-menu').classList.remove('hidden');
-        sounds.background.pause();
+        try {
+            sounds.background.pause();
+        } catch (e) {}
     } else {
         document.getElementById('pause-menu').classList.add('hidden');
         if (gameState === 'playing') {
-            sounds.background.play();
+            try {
+                sounds.background.play().catch(() => {});
+            } catch (e) {}
         }
     }
 }
@@ -266,7 +280,9 @@ function startGame(mode) {
     gameState = 'playing';
     resetGame();
     hideMenu();
-    sounds.background.play();
+    try {
+        sounds.background.play().catch(() => {});
+    } catch (e) {}
     
     // Update player names
     document.getElementById('player1-name').textContent = 'Player 1';
@@ -362,8 +378,7 @@ function updateGame() {
     // Ball collision with walls
     if (Math.abs(ball.position.x) > 9) {
         ballVelocity.x *= -1;
-        sounds.wall.currentTime = 0;
-        sounds.wall.play();
+        playSound('wall');
     }
     if (Math.abs(ball.position.y) > 5) {
         ballVelocity.y *= -1;
@@ -375,8 +390,7 @@ function updateGame() {
         Math.abs(ball.position.x - player1Paddle.position.x) < PADDLE_WIDTH / 2) {
         ballVelocity.z *= -1;
         ballVelocity.x += (ball.position.x - player1Paddle.position.x) * 0.1;
-        sounds.paddle.currentTime = 0;
-        sounds.paddle.play();
+        playSound('paddle');
     }
 
     if (ball.position.z > player2Paddle.position.z - PADDLE_DEPTH &&
@@ -384,23 +398,31 @@ function updateGame() {
         Math.abs(ball.position.x - player2Paddle.position.x) < PADDLE_WIDTH / 2) {
         ballVelocity.z *= -1;
         ballVelocity.x += (ball.position.x - player2Paddle.position.x) * 0.1;
-        sounds.paddle.currentTime = 0;
-        sounds.paddle.play();
+        playSound('paddle');
     }
 
     // Scoring
     if (ball.position.z < -10) {
         player2Score++;
         document.getElementById('player2-score').textContent = player2Score;
-        sounds.score.currentTime = 0;
-        sounds.score.play();
+        playSound('score');
         resetBall(1);
     } else if (ball.position.z > 10) {
         player1Score++;
         document.getElementById('player1-score').textContent = player1Score;
-        sounds.score.currentTime = 0;
-        sounds.score.play();
+        playSound('score');
         resetBall(-1);
+    }
+}
+
+function playSound(soundName) {
+    try {
+        if (sounds[soundName] && sounds[soundName].readyState >= 2) {
+            sounds[soundName].currentTime = 0;
+            sounds[soundName].play().catch(() => {});
+        }
+    } catch (e) {
+        // Silently fail if sound playback fails
     }
 }
 
