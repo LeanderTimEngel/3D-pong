@@ -7,7 +7,7 @@ const PADDLE_DEPTH = 0.2;
 const BALL_RADIUS = 0.2;
 const BALL_SPEED = 0.15;
 const PADDLE_SPEED = 0.2;
-const MAX_SCORE = 11; // Game ends when a player reaches this score
+const MAX_SCORE = 5; // Game ends when a player reaches this score
 
 // Sound effects setup with error handling
 const sounds = {
@@ -129,6 +129,40 @@ const ball = new THREE.Mesh(ballGeometry, ballMaterial);
 ball.castShadow = true;
 scene.add(ball);
 
+// Add this after creating the ball
+const ballTrail = [];
+const MAX_TRAIL_LENGTH = 20;
+
+function updateBallTrail() {
+    // Add new position to trail
+    ballTrail.unshift(ball.position.clone());
+    
+    // Remove old positions if trail is too long
+    if (ballTrail.length > MAX_TRAIL_LENGTH) {
+        ballTrail.pop();
+    }
+    
+    // Update trail visualization
+    ballTrail.forEach((pos, index) => {
+        const scale = 1 - (index / MAX_TRAIL_LENGTH);
+        const trailSegment = new THREE.Mesh(
+            new THREE.SphereGeometry(BALL_RADIUS * scale),
+            new THREE.MeshBasicMaterial({
+                color: 0x00ff00,
+                transparent: true,
+                opacity: scale * 0.3
+            })
+        );
+        trailSegment.position.copy(pos);
+        scene.add(trailSegment);
+        
+        // Remove trail segment after a frame
+        setTimeout(() => {
+            scene.remove(trailSegment);
+        }, 0);
+    });
+}
+
 // Create arena with better visuals
 const floorGeometry = new THREE.PlaneGeometry(20, 20);
 const floorMaterial = new THREE.MeshPhongMaterial({
@@ -204,37 +238,63 @@ window.addEventListener('keyup', (e) => {
     }
 });
 
-// Menu handling
-document.getElementById('singleplayer').addEventListener('click', () => startGame('singleplayer'));
-document.getElementById('multiplayer').addEventListener('click', () => startGame('multiplayer'));
-
-// Difficulty buttons
-document.querySelectorAll('.difficulty-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        difficulty = btn.dataset.difficulty;
+// Add this function to handle button hover effects
+function addButtonEffects(button) {
+    if (button.dataset.hasEffects) return; // Prevent duplicate listeners
+    
+    button.dataset.hasEffects = 'true';
+    button.addEventListener('mouseenter', () => {
+        button.style.transform = 'scale(1.05)';
     });
-});
+    
+    button.addEventListener('mouseleave', () => {
+        button.style.transform = 'scale(1)';
+    });
+    
+    button.addEventListener('mousedown', () => {
+        button.style.transform = 'scale(0.95)';
+    });
+    
+    button.addEventListener('mouseup', () => {
+        button.style.transform = 'scale(1.05)';
+    });
+}
 
-document.getElementById('pause-btn').addEventListener('click', togglePause);
-document.getElementById('menu-btn').addEventListener('click', () => {
-    gameState = 'menu';
-    showMenu();
-});
-document.getElementById('resume').addEventListener('click', togglePause);
-document.getElementById('restart').addEventListener('click', () => {
-    resetGame();
-    togglePause();
-});
-document.getElementById('quit').addEventListener('click', () => {
-    gameState = 'menu';
-    showMenu();
-    try {
-        sounds.background.pause();
-    } catch (e) {}
-});
+// Update the button effects application
+function initializeButtons() {
+    // Main menu buttons
+    document.querySelectorAll('button').forEach(addButtonEffects);
+    
+    // Difficulty buttons
+    document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        if (btn.dataset.hasListener) return; // Prevent duplicate listeners
+        btn.dataset.hasListener = 'true';
+        
+        btn.addEventListener('click', (e) => {
+            document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            difficulty = btn.dataset.difficulty;
+        });
+    });
+}
 
+// Call this function after showing menus
+function initializeMenuButtons() {
+    const singlePlayerBtn = document.getElementById('singleplayer');
+    const multiPlayerBtn = document.getElementById('multiplayer');
+    
+    if (!singlePlayerBtn.dataset.hasListener) {
+        singlePlayerBtn.dataset.hasListener = 'true';
+        singlePlayerBtn.addEventListener('click', () => startGame('singleplayer'));
+    }
+    
+    if (!multiPlayerBtn.dataset.hasListener) {
+        multiPlayerBtn.dataset.hasListener = 'true';
+        multiPlayerBtn.addEventListener('click', () => startGame('multiplayer'));
+    }
+}
+
+// Update the showMenu function
 function showMenu() {
     document.getElementById('menu').classList.remove('hidden');
     document.getElementById('game-ui').classList.add('hidden');
@@ -243,7 +303,16 @@ function showMenu() {
     try {
         sounds.background.pause();
     } catch (e) {}
+    
+    initializeMenuButtons();
+    initializeButtons();
 }
+
+// Update the game initialization
+window.addEventListener('load', () => {
+    initializeButtons();
+    showMenu();
+});
 
 function hideMenu() {
     document.getElementById('menu').classList.add('hidden');
@@ -252,10 +321,39 @@ function hideMenu() {
     isPaused = false;
 }
 
+function initializePauseMenuButtons() {
+    const resumeBtn = document.getElementById('resume');
+    const restartBtn = document.getElementById('restart');
+    const quitBtn = document.getElementById('quit');
+    
+    if (!resumeBtn.dataset.hasListener) {
+        resumeBtn.dataset.hasListener = 'true';
+        resumeBtn.addEventListener('click', togglePause);
+    }
+    
+    if (!restartBtn.dataset.hasListener) {
+        restartBtn.dataset.hasListener = 'true';
+        restartBtn.addEventListener('click', () => {
+            resetGame();
+            togglePause();
+        });
+    }
+    
+    if (!quitBtn.dataset.hasListener) {
+        quitBtn.dataset.hasListener = 'true';
+        quitBtn.addEventListener('click', () => {
+            gameState = 'menu';
+            showMenu();
+        });
+    }
+}
+
+// Update togglePause function
 function togglePause() {
     isPaused = !isPaused;
     if (isPaused) {
         document.getElementById('pause-menu').classList.remove('hidden');
+        initializePauseMenuButtons(); // Initialize pause menu buttons
         try {
             sounds.background.pause();
         } catch (e) {}
@@ -391,16 +489,14 @@ function updateGame() {
     if (ball.position.z < -10) {
         player2Score++;
         document.getElementById('player2-score').textContent = player2Score;
-        const effect = createScoreEffect(ball.position);
-        setTimeout(() => scene.remove(effect.particles), 1000);
+        createScoreEffect(ball.position.clone());
         playSound('score');
         checkWinCondition();
         resetBall(1);
     } else if (ball.position.z > 10) {
         player1Score++;
         document.getElementById('player1-score').textContent = player1Score;
-        const effect = createScoreEffect(ball.position);
-        setTimeout(() => scene.remove(effect.particles), 1000);
+        createScoreEffect(ball.position.clone());
         playSound('score');
         checkWinCondition();
         resetBall(-1);
@@ -432,9 +528,45 @@ function handlePaddleHit(paddle) {
     const paddleHitPosition = (ball.position.x - paddle.position.x) / (PADDLE_WIDTH / 2);
     ballVelocity.x = currentBallSpeed * paddleHitPosition;
     
-    // Visual feedback for paddle hit
+    // Enhanced visual and physical feedback
     paddle.material.emissiveIntensity = 0.8;
-    setTimeout(() => paddle.material.emissiveIntensity = 0.2, 100);
+    paddle.scale.x = 1.2;
+    paddle.scale.y = 0.8;
+    
+    // Add a shockwave effect
+    const shockwave = new THREE.Mesh(
+        new THREE.RingGeometry(0, 2, 32),
+        new THREE.MeshBasicMaterial({
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.5
+        })
+    );
+    
+    shockwave.position.copy(ball.position);
+    shockwave.rotation.x = Math.PI / 2;
+    scene.add(shockwave);
+    
+    // Animate shockwave
+    const expandShockwave = () => {
+        shockwave.scale.x += 0.2;
+        shockwave.scale.y += 0.2;
+        shockwave.material.opacity -= 0.05;
+        
+        if (shockwave.material.opacity > 0) {
+            requestAnimationFrame(expandShockwave);
+        } else {
+            scene.remove(shockwave);
+        }
+    };
+    
+    expandShockwave();
+    
+    setTimeout(() => {
+        paddle.material.emissiveIntensity = 0.2;
+        paddle.scale.x = 1;
+        paddle.scale.y = 1;
+    }, 100);
     
     // Update active player indication
     updateActivePlayer(paddle === player1Paddle ? 2 : 1);
@@ -458,8 +590,13 @@ function showRallyText() {
     rallyText.textContent = `${consecutiveHits} Hit Combo!`;
     document.body.appendChild(rallyText);
     
+    // Add animation class after a brief delay to trigger the animation
+    requestAnimationFrame(() => {
+        rallyText.classList.add('rally-text-animate');
+    });
+    
     setTimeout(() => {
-        rallyText.style.opacity = '0';
+        rallyText.classList.add('rally-text-fade');
         setTimeout(() => rallyText.remove(), 500);
     }, 1000);
 }
@@ -475,19 +612,114 @@ function showWinScreen(winner) {
     gameState = 'menu';
     playSound('win');
     
+    // Remove any existing win screen
+    const existingWinScreen = document.querySelector('.win-screen');
+    if (existingWinScreen) {
+        document.body.removeChild(existingWinScreen);
+    }
+    
     const winScreen = document.createElement('div');
     winScreen.className = 'win-screen menu';
     winScreen.innerHTML = `
         <h2>${winner} Wins!</h2>
         <div class="score-summary">
-            <p>Final Score: ${player1Score} - ${player2Score}</p>
+            <div class="final-score">
+                <div class="score-item ${player1Score > player2Score ? 'winner' : ''}">
+                    <span class="player-label">Player 1</span>
+                    <span class="score-value">${player1Score}</span>
+                </div>
+                <div class="score-divider">-</div>
+                <div class="score-item ${player2Score > player1Score ? 'winner' : ''}">
+                    <span class="player-label">${gameMode === 'singleplayer' ? 'AI' : 'Player 2'}</span>
+                    <span class="score-value">${player2Score}</span>
+                </div>
+            </div>
+            <div class="stats-summary">
+                <div class="stat">Longest Rally: ${maxRally}</div>
+                <div class="stat">Max Ball Speed: ${(currentBallSpeed / initialBallSpeed).toFixed(1)}x</div>
+            </div>
         </div>
         <div class="menu-options">
-            <button onclick="location.reload()">Play Again</button>
-            <button onclick="showMenu()">Back to Menu</button>
+            <button class="glow-effect" id="play-again-btn">🔄 Play Again</button>
+            <button class="glow-effect" id="back-menu-btn">🏠 Back to Menu</button>
         </div>
     `;
     document.body.appendChild(winScreen);
+
+    // Add celebration particles
+    createWinCelebration();
+
+    // Add proper event listeners
+    document.getElementById('play-again-btn').addEventListener('click', () => {
+        document.body.removeChild(winScreen);
+        resetGame();
+        startGame(gameMode);
+    });
+
+    document.getElementById('back-menu-btn').addEventListener('click', () => {
+        document.body.removeChild(winScreen);
+        showMenu();
+    });
+}
+
+// Add this new function for win celebration
+function createWinCelebration() {
+    const particleCount = 100;
+    const colors = [0x00ff00, 0xffff00, 0x00ffff, 0xff00ff];
+    const particles = [];
+    
+    for (let i = 0; i < particleCount; i++) {
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, 8, 8),
+            new THREE.MeshBasicMaterial({
+                color: colors[Math.floor(Math.random() * colors.length)],
+                transparent: true,
+                opacity: 1
+            })
+        );
+        
+        // Position particles in a sphere around the center
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const r = 5;
+        
+        particle.position.set(
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.sin(phi) * Math.sin(theta),
+            r * Math.cos(phi)
+        );
+        
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            Math.random() * 0.2,
+            (Math.random() - 0.5) * 0.2
+        );
+        
+        scene.add(particle);
+        particles.push(particle);
+    }
+    
+    // Animate celebration particles
+    const animateParticles = () => {
+        particles.forEach((particle, index) => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.005; // gentle gravity
+            particle.material.opacity -= 0.01;
+            particle.rotation.x += 0.1;
+            particle.rotation.y += 0.1;
+            
+            if (particle.material.opacity <= 0) {
+                scene.remove(particle);
+                particles.splice(index, 1);
+            }
+        });
+        
+        if (particles.length > 0) {
+            requestAnimationFrame(animateParticles);
+        }
+    };
+    
+    animateParticles();
 }
 
 // Create starfield background
@@ -522,40 +754,51 @@ const starMaterial = new THREE.PointsMaterial({
 const starField = new THREE.Points(starGeometry, starMaterial);
 scene.add(starField);
 
-// Add visual effects for scoring
-const createScoreEffect = (position) => {
-    const particles = new THREE.Points(
-        new THREE.BufferGeometry(),
-        new THREE.PointsMaterial({
-            color: 0x00ff00,
-            size: 0.1,
-            transparent: true,
-            blending: THREE.AdditiveBlending
-        })
-    );
-
-    const particleCount = 50;
-    const positions = new Float32Array(particleCount * 3);
-    const velocities = [];
-
+function createScoreEffect(position) {
+    const particleCount = 30;
+    const particles = [];
+    
     for (let i = 0; i < particleCount; i++) {
-        const i3 = i * 3;
-        positions[i3] = position.x;
-        positions[i3 + 1] = position.y;
-        positions[i3 + 2] = position.z;
-
-        velocities.push({
-            x: (Math.random() - 0.5) * 0.3,
-            y: Math.random() * 0.3,
-            z: (Math.random() - 0.5) * 0.3
-        });
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, 8, 8),
+            new THREE.MeshBasicMaterial({ 
+                color: 0x00ff00,
+                transparent: true,
+                opacity: 1 
+            })
+        );
+        
+        particle.position.copy(position);
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.3,
+            Math.random() * 0.2,
+            (Math.random() - 0.5) * 0.3
+        );
+        
+        scene.add(particle);
+        particles.push(particle);
     }
-
-    particles.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    scene.add(particles);
-
-    return { particles, velocities };
-};
+    
+    // Animate particles
+    const animateParticles = () => {
+        particles.forEach((particle, index) => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.01; // gravity
+            particle.material.opacity -= 0.02;
+            
+            if (particle.material.opacity <= 0) {
+                scene.remove(particle);
+                particles.splice(index, 1);
+            }
+        });
+        
+        if (particles.length > 0) {
+            requestAnimationFrame(animateParticles);
+        }
+    };
+    
+    animateParticles();
+}
 
 function playSound(soundName) {
     try {
@@ -568,10 +811,19 @@ function playSound(soundName) {
     }
 }
 
+function updateBackgroundColor() {
+    const intensity = Math.min(consecutiveHits * 0.1, 1);
+    const color = new THREE.Color(0x000000);
+    color.lerp(new THREE.Color(0x001100), intensity);
+    scene.background = color;
+}
+
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
     updateGame();
+    updateBallTrail();
+    updateBackgroundColor();
     renderer.render(scene, camera);
 }
 
