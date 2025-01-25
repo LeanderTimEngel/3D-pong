@@ -348,30 +348,32 @@ function initializePauseMenuButtons() {
     }
 }
 
-// Update togglePause function
-function togglePause() {
-    isPaused = !isPaused;
-    if (isPaused) {
-        document.getElementById('pause-menu').classList.remove('hidden');
-        initializePauseMenuButtons(); // Initialize pause menu buttons
-        try {
-            sounds.background.pause();
-        } catch (e) {}
-    } else {
-        document.getElementById('pause-menu').classList.add('hidden');
-        if (gameState === 'playing') {
-            try {
-                sounds.background.play().catch(() => {});
-            } catch (e) {}
-        }
+// Add event listeners for the pause and menu buttons
+function initializeGameButtons() {
+    const pauseBtn = document.getElementById('pause-btn');
+    const menuBtn = document.getElementById('menu-btn');
+    
+    if (!pauseBtn.dataset.hasListener) {
+        pauseBtn.dataset.hasListener = 'true';
+        pauseBtn.addEventListener('click', togglePause);
+    }
+    
+    if (!menuBtn.dataset.hasListener) {
+        menuBtn.dataset.hasListener = 'true';
+        menuBtn.addEventListener('click', () => {
+            gameState = 'menu';
+            showMenu();
+        });
     }
 }
 
+// Update the startGame function to initialize game buttons
 function startGame(mode) {
     gameMode = mode;
     gameState = 'playing';
     resetGame();
     hideMenu();
+    initializeGameButtons();
     try {
         sounds.background.play().catch(() => {});
     } catch (e) {}
@@ -836,4 +838,27 @@ window.addEventListener('resize', () => {
 
 // Start the game
 showMenu();
-animate(); 
+animate();
+
+// Update togglePause function
+function togglePause() {
+    isPaused = !isPaused;
+    const pauseBtn = document.getElementById('pause-btn');
+    
+    if (isPaused) {
+        document.getElementById('pause-menu').classList.remove('hidden');
+        pauseBtn.querySelector('.button-content').textContent = '▶️ Resume';
+        initializePauseMenuButtons();
+        try {
+            sounds.background.pause();
+        } catch (e) {}
+    } else {
+        document.getElementById('pause-menu').classList.add('hidden');
+        pauseBtn.querySelector('.button-content').textContent = '⏸️ Pause';
+        if (gameState === 'playing') {
+            try {
+                sounds.background.play().catch(() => {});
+            } catch (e) {}
+        }
+    }
+} 
