@@ -6,18 +6,91 @@ body {
     color: white;
 }
 
+.background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a0a1f 0%, #1a1a3f 100%);
+}
+
+.grid {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background-image: 
+        linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(60deg);
+    animation: gridMove 20s linear infinite;
+}
+
+.grid-overlay {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background-image: 
+        linear-gradient(rgba(0, 255, 0, 0.05) 2px, transparent 2px),
+        linear-gradient(90deg, rgba(0, 255, 0, 0.05) 2px, transparent 2px);
+    background-size: 100px 100px;
+    transform: perspective(500px) rotateX(60deg);
+    animation: gridMove 15s linear infinite;
+}
+
+.floating-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center,
+        rgba(0, 255, 0, 0.1) 0%,
+        transparent 10%);
+    mask-image: repeating-radial-gradient(circle at center,
+        #000 0px,
+        #000 5px,
+        transparent 5px,
+        transparent 10px);
+    animation: particleFloat 10s ease-in-out infinite;
+}
+
+@keyframes gridMove {
+    0% {
+        transform: perspective(500px) rotateX(60deg) translateY(0);
+    }
+    100% {
+        transform: perspective(500px) rotateX(60deg) translateY(50px);
+    }
+}
+
+@keyframes particleFloat {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-20px) scale(1.1);
+    }
+}
+
 .menu {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) scale(1);
     text-align: center;
-    background: rgba(15, 15, 31, 0.95);
+    background: rgba(15, 15, 31, 0.85);
     padding: 3rem;
     border-radius: 20px;
-    box-shadow: 0 0 40px rgba(0, 255, 0, 0.2);
+    box-shadow: 0 0 40px rgba(0, 255, 0, 0.15),
+                inset 0 0 20px rgba(0, 255, 0, 0.1);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.2);
     z-index: 100;
     min-width: 320px;
     opacity: 1;
@@ -78,12 +151,26 @@ button {
     text-transform: uppercase;
     letter-spacing: 1px;
     box-shadow: 0 4px 15px rgba(0, 255, 0, 0.2);
+    position: relative;
+    overflow: hidden;
 }
 
-button:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 6px 20px rgba(0, 255, 0, 0.3);
-    background: linear-gradient(135deg, #00ff00 0%, #00dd00 100%);
+button::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    transform: scale(0.5);
+}
+
+button:hover::after {
+    opacity: 1;
+    transform: scale(1);
 }
 
 .settings {
@@ -164,8 +251,10 @@ button:hover {
 }
 
 #game-container {
+    position: relative;
     width: 100vw;
     height: 100vh;
+    background: transparent;
 }
 
 #score-container {
@@ -253,7 +342,8 @@ button:hover {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(15, 15, 31, 0.9);
+    background: rgba(15, 15, 31, 0.95);
+    backdrop-filter: blur(10px);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -443,6 +533,7 @@ button:hover {
 /* Add pulsing effect to active player */
 .player-info.active {
     animation: pulse 2s infinite;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
 }
 
 @keyframes pulse {
