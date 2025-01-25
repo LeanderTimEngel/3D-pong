@@ -7,13 +7,15 @@ const PADDLE_DEPTH = 0.2;
 const BALL_RADIUS = 0.2;
 const BALL_SPEED = 0.15;
 const PADDLE_SPEED = 0.2;
+const MAX_SCORE = 11; // Game ends when a player reaches this score
 
 // Sound effects setup with error handling
 const sounds = {
     paddle: new Audio(),
     wall: new Audio(),
     score: new Audio(),
-    background: new Audio()
+    background: new Audio(),
+    win: new Audio()
 };
 
 // Try to load sounds but don't block the game
@@ -22,6 +24,7 @@ try {
     sounds.wall.src = 'sounds/wall_hit.mp3';
     sounds.score.src = 'sounds/score.mp3';
     sounds.background.src = 'sounds/background.mp3';
+    sounds.win.src = 'sounds/win.mp3';
     sounds.background.loop = true;
     sounds.background.volume = 0.3;
 } catch (e) {
@@ -39,6 +42,10 @@ let ballVelocity = new THREE.Vector3(BALL_SPEED, 0, BALL_SPEED);
 let player1Score = 0;
 let player2Score = 0;
 let isPaused = false;
+let consecutiveHits = 0; // Track rally length
+let maxRally = 0;
+let initialBallSpeed = BALL_SPEED;
+let currentBallSpeed = BALL_SPEED;
 
 // AI settings
 const AI_DIFFICULTIES = {
@@ -278,18 +285,39 @@ function startGame(mode) {
 function resetGame() {
     player1Score = 0;
     player2Score = 0;
+    consecutiveHits = 0;
+    currentBallSpeed = initialBallSpeed;
+    
+    // Reset UI
     document.getElementById('player1-score').textContent = '0';
     document.getElementById('player2-score').textContent = '0';
-    resetBall(1);
+    document.getElementById('rally-count').textContent = '0';
+    document.getElementById('ball-speed').textContent = '1x';
+    
+    // Reset paddles
     player1Paddle.position.x = 0;
     player2Paddle.position.x = 0;
+    
+    // Reset ball
+    resetBall(1);
+    
+    // Reset active player
+    updateActivePlayer(1);
 }
 
 function resetBall(direction) {
     ball.position.set(0, 0, 0);
-    const angle = (Math.random() - 0.5) * Math.PI / 4; // Random angle within 45 degrees
-    ballVelocity.x = BALL_SPEED * Math.sin(angle);
-    ballVelocity.z = BALL_SPEED * direction * Math.cos(angle);
+    const angle = (Math.random() - 0.5) * Math.PI / 4;
+    ballVelocity.x = currentBallSpeed * Math.sin(angle);
+    ballVelocity.z = currentBallSpeed * direction * Math.cos(angle);
+    
+    // Reset consecutive hits and speed
+    consecutiveHits = 0;
+    currentBallSpeed = initialBallSpeed;
+    
+    // Update UI
+    document.getElementById('rally-count').textContent = '0';
+    document.getElementById('ball-speed').textContent = '1x';
 }
 
 function updateAI() {
@@ -316,6 +344,10 @@ function updateAI() {
 
 function updateGame() {
     if (gameState !== 'playing' || isPaused) return;
+
+    // Rotate starfield for dynamic background
+    starField.rotation.y += 0.0001;
+    starField.rotation.x += 0.0001;
 
     // Move paddles
     if (keys.ArrowLeft && gameMode === 'multiplayer' && player2Paddle.position.x > -8) {
@@ -346,31 +378,31 @@ function updateGame() {
     if (ball.position.z < player1Paddle.position.z + PADDLE_DEPTH &&
         ball.position.z > player1Paddle.position.z - PADDLE_DEPTH &&
         Math.abs(ball.position.x - player1Paddle.position.x) < PADDLE_WIDTH / 2) {
-        ballVelocity.z *= -1.1; // Increase speed slightly
-        const paddleHitPosition = (ball.position.x - player1Paddle.position.x) / (PADDLE_WIDTH / 2);
-        ballVelocity.x = BALL_SPEED * paddleHitPosition;
-        playSound('paddle');
+        handlePaddleHit(player1Paddle);
     }
 
     if (ball.position.z > player2Paddle.position.z - PADDLE_DEPTH &&
         ball.position.z < player2Paddle.position.z + PADDLE_DEPTH &&
         Math.abs(ball.position.x - player2Paddle.position.x) < PADDLE_WIDTH / 2) {
-        ballVelocity.z *= -1.1; // Increase speed slightly
-        const paddleHitPosition = (ball.position.x - player2Paddle.position.x) / (PADDLE_WIDTH / 2);
-        ballVelocity.x = BALL_SPEED * paddleHitPosition;
-        playSound('paddle');
+        handlePaddleHit(player2Paddle);
     }
 
     // Scoring
     if (ball.position.z < -10) {
         player2Score++;
         document.getElementById('player2-score').textContent = player2Score;
+        const effect = createScoreEffect(ball.position);
+        setTimeout(() => scene.remove(effect.particles), 1000);
         playSound('score');
+        checkWinCondition();
         resetBall(1);
     } else if (ball.position.z > 10) {
         player1Score++;
         document.getElementById('player1-score').textContent = player1Score;
+        const effect = createScoreEffect(ball.position);
+        setTimeout(() => scene.remove(effect.particles), 1000);
         playSound('score');
+        checkWinCondition();
         resetBall(-1);
     }
 
@@ -378,6 +410,152 @@ function updateGame() {
     ball.rotation.x += ballVelocity.z * 0.1;
     ball.rotation.z -= ballVelocity.x * 0.1;
 }
+
+function handlePaddleHit(paddle) {
+    consecutiveHits++;
+    
+    // Update max rally
+    if (consecutiveHits > maxRally) {
+        maxRally = consecutiveHits;
+        document.getElementById('max-rally').textContent = maxRally;
+    }
+    
+    // Update current rally
+    document.getElementById('rally-count').textContent = consecutiveHits;
+    
+    // Increase ball speed
+    currentBallSpeed = initialBallSpeed * (1 + Math.min(consecutiveHits * 0.1, 1));
+    document.getElementById('ball-speed').textContent = `${(currentBallSpeed / initialBallSpeed).toFixed(1)}x`;
+    
+    // Update ball velocity
+    ballVelocity.z *= -1.1;
+    const paddleHitPosition = (ball.position.x - paddle.position.x) / (PADDLE_WIDTH / 2);
+    ballVelocity.x = currentBallSpeed * paddleHitPosition;
+    
+    // Visual feedback for paddle hit
+    paddle.material.emissiveIntensity = 0.8;
+    setTimeout(() => paddle.material.emissiveIntensity = 0.2, 100);
+    
+    // Update active player indication
+    updateActivePlayer(paddle === player1Paddle ? 2 : 1);
+    
+    playSound('paddle');
+    
+    // Update rally counter
+    if (consecutiveHits > 5) {
+        showRallyText();
+    }
+}
+
+function updateActivePlayer(playerNum) {
+    document.getElementById('player1-info').classList.toggle('active', playerNum === 1);
+    document.getElementById('player2-info').classList.toggle('active', playerNum === 2);
+}
+
+function showRallyText() {
+    const rallyText = document.createElement('div');
+    rallyText.className = 'rally-text';
+    rallyText.textContent = `${consecutiveHits} Hit Combo!`;
+    document.body.appendChild(rallyText);
+    
+    setTimeout(() => {
+        rallyText.style.opacity = '0';
+        setTimeout(() => rallyText.remove(), 500);
+    }, 1000);
+}
+
+function checkWinCondition() {
+    if (player1Score >= MAX_SCORE || player2Score >= MAX_SCORE) {
+        const winner = player1Score > player2Score ? 'Player 1' : (gameMode === 'singleplayer' ? 'AI' : 'Player 2');
+        showWinScreen(winner);
+    }
+}
+
+function showWinScreen(winner) {
+    gameState = 'menu';
+    playSound('win');
+    
+    const winScreen = document.createElement('div');
+    winScreen.className = 'win-screen menu';
+    winScreen.innerHTML = `
+        <h2>${winner} Wins!</h2>
+        <div class="score-summary">
+            <p>Final Score: ${player1Score} - ${player2Score}</p>
+        </div>
+        <div class="menu-options">
+            <button onclick="location.reload()">Play Again</button>
+            <button onclick="showMenu()">Back to Menu</button>
+        </div>
+    `;
+    document.body.appendChild(winScreen);
+}
+
+// Create starfield background
+const starGeometry = new THREE.BufferGeometry();
+const starCount = 1000;
+const starPositions = new Float32Array(starCount * 3);
+const starColors = new Float32Array(starCount * 3);
+
+for (let i = 0; i < starCount; i++) {
+    const i3 = i * 3;
+    starPositions[i3] = (Math.random() - 0.5) * 100;
+    starPositions[i3 + 1] = (Math.random() - 0.5) * 100;
+    starPositions[i3 + 2] = (Math.random() - 0.5) * 100;
+
+    // Create different colored stars
+    const color = new THREE.Color();
+    color.setHSL(Math.random(), 0.5, 0.5);
+    starColors[i3] = color.r;
+    starColors[i3 + 1] = color.g;
+    starColors[i3 + 2] = color.b;
+}
+
+starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+
+const starMaterial = new THREE.PointsMaterial({
+    size: 0.1,
+    vertexColors: true,
+    transparent: true
+});
+
+const starField = new THREE.Points(starGeometry, starMaterial);
+scene.add(starField);
+
+// Add visual effects for scoring
+const createScoreEffect = (position) => {
+    const particles = new THREE.Points(
+        new THREE.BufferGeometry(),
+        new THREE.PointsMaterial({
+            color: 0x00ff00,
+            size: 0.1,
+            transparent: true,
+            blending: THREE.AdditiveBlending
+        })
+    );
+
+    const particleCount = 50;
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = [];
+
+    for (let i = 0; i < particleCount; i++) {
+        const i3 = i * 3;
+        positions[i3] = position.x;
+        positions[i3 + 1] = position.y;
+        positions[i3 + 2] = position.z;
+
+        velocities.push({
+            x: (Math.random() - 0.5) * 0.3,
+            y: Math.random() * 0.3,
+            z: (Math.random() - 0.5) * 0.3
+        });
+    }
+
+    particles.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    scene.add(particles);
+
+    return { particles, velocities };
+};
 
 function playSound(soundName) {
     try {
