@@ -1,0 +1,120 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.menu {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.8);
+    padding: 2rem;
+    border-radius: 10px;
+    z-index: 100;
+}
+
+.menu h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: #00ff00;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.menu-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.2rem;
+    background-color: #00ff00;
+    border: none;
+    border-radius: 5px;
+    color: black;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #00cc00;
+    transform: scale(1.05);
+}
+
+.settings {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.settings label {
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+}
+
+.settings select, .settings input {
+    padding: 0.5rem;
+    font-size: 1rem;
+    background-color: #333;
+    color: white;
+    border: 1px solid #00ff00;
+    border-radius: 3px;
+}
+
+#game-container {
+    width: 100vw;
+    height: 100vh;
+}
+
+#score-container {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    z-index: 1;
+}
+
+.player-info {
+    text-align: center;
+}
+
+.player-name {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+#player1-score, #player2-score {
+    font-size: 48px;
+    font-weight: bold;
+}
+
+.game-button {
+    position: absolute;
+    z-index: 1;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+}
+
+#pause-btn {
+    top: 20px;
+    right: 20px;
+}
+
+#menu-btn {
+    top: 20px;
+    right: 120px;
+}
+
+.hidden {
+    display: none;
+} 
