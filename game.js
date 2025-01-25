@@ -20,7 +20,7 @@ const sounds = {
 
 // Try to load sounds but don't block the game
 try {
-    sounds.paddle.src = 'sounds/paddle_hit.mp3';
+    sounds.paddle.src = 'sounds/paddle_hit.wav';
     sounds.wall.src = 'sounds/wall_hit.mp3';
     sounds.score.src = 'sounds/score.mp3';
     sounds.background.src = 'sounds/background.mp3';
@@ -86,7 +86,7 @@ directionalLight.shadow.mapSize.width = 2048;
 directionalLight.shadow.mapSize.height = 2048;
 scene.add(directionalLight);
 
-// Add spotlights for dramatic effect
+// Add spotlights 
 const spotlight1 = new THREE.SpotLight(0x00ff00, 1);
 spotlight1.position.set(-10, 10, 0);
 spotlight1.angle = Math.PI / 6;
@@ -99,7 +99,7 @@ spotlight2.angle = Math.PI / 6;
 spotlight2.penumbra = 0.3;
 scene.add(spotlight2);
 
-// Create paddles with better materials
+// Create paddles 
 const paddleGeometry = new THREE.BoxGeometry(PADDLE_WIDTH, PADDLE_HEIGHT, PADDLE_DEPTH);
 const paddleMaterial = new THREE.MeshPhongMaterial({
     color: 0x00ff00,
