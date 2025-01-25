@@ -31,27 +31,10 @@ try {
 // Hide loading screen immediately
 document.getElementById('loading-overlay').style.display = 'none';
 
-// Particle system for ball trail
-const particleCount = 100;
-const particleSystem = new THREE.Points(
-    new THREE.BufferGeometry(),
-    new THREE.PointsMaterial({
-        color: 0x00ff00,
-        size: 0.05,
-        transparent: true,
-        blending: THREE.AdditiveBlending
-    })
-);
-
-const particles = new Float32Array(particleCount * 3);
-particleSystem.geometry.setAttribute('position', new THREE.BufferAttribute(particles, 3));
-const particlePositions = [];
-
 // Game state
-let gameState = 'menu'; // menu, playing, paused
-let gameMode = ''; // singleplayer, multiplayer
+let gameState = 'menu';
+let gameMode = '';
 let difficulty = 'medium';
-let aiSeed = null;
 let ballVelocity = new THREE.Vector3(BALL_SPEED, 0, BALL_SPEED);
 let player1Score = 0;
 let player2Score = 0;
@@ -140,7 +123,6 @@ ball.castShadow = true;
 scene.add(ball);
 
 // Create arena with better visuals
-// Floor
 const floorGeometry = new THREE.PlaneGeometry(20, 20);
 const floorMaterial = new THREE.MeshPhongMaterial({
     color: 0x222222,
@@ -188,12 +170,9 @@ const centerLine = new THREE.Mesh(centerLineGeometry, centerLineMaterial);
 centerLine.rotation.x = -Math.PI / 2;
 scene.add(centerLine);
 
-// Add particle system to scene
-scene.add(particleSystem);
-
 // Camera position for better gameplay view
-camera.position.set(0, 20, -5); // Move camera back and up
-camera.lookAt(0, 0, 0); // Look at the center of the arena
+camera.position.set(0, 25, 0);
+camera.lookAt(0, 0, 0);
 
 // Input handling
 const keys = {
@@ -221,12 +200,16 @@ window.addEventListener('keyup', (e) => {
 // Menu handling
 document.getElementById('singleplayer').addEventListener('click', () => startGame('singleplayer'));
 document.getElementById('multiplayer').addEventListener('click', () => startGame('multiplayer'));
-document.getElementById('difficulty').addEventListener('change', (e) => {
-    difficulty = e.target.value;
+
+// Difficulty buttons
+document.querySelectorAll('.difficulty-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        difficulty = btn.dataset.difficulty;
+    });
 });
-document.getElementById('aiSeed').addEventListener('change', (e) => {
-    aiSeed = e.target.value ? Number(e.target.value) : null;
-});
+
 document.getElementById('pause-btn').addEventListener('click', togglePause);
 document.getElementById('menu-btn').addEventListener('click', () => {
     gameState = 'menu';
@@ -240,7 +223,9 @@ document.getElementById('restart').addEventListener('click', () => {
 document.getElementById('quit').addEventListener('click', () => {
     gameState = 'menu';
     showMenu();
-    sounds.background.pause();
+    try {
+        sounds.background.pause();
+    } catch (e) {}
 });
 
 function showMenu() {
@@ -248,7 +233,9 @@ function showMenu() {
     document.getElementById('game-ui').classList.add('hidden');
     document.getElementById('pause-menu').classList.add('hidden');
     isPaused = true;
-    sounds.background.pause();
+    try {
+        sounds.background.pause();
+    } catch (e) {}
 }
 
 function hideMenu() {
@@ -284,33 +271,8 @@ function startGame(mode) {
         sounds.background.play().catch(() => {});
     } catch (e) {}
     
-    // Update player names
     document.getElementById('player1-name').textContent = 'Player 1';
     document.getElementById('player2-name').textContent = gameMode === 'singleplayer' ? 'AI' : 'Player 2';
-}
-
-function updateParticles() {
-    // Add current ball position to particle trail
-    particlePositions.unshift({
-        x: ball.position.x,
-        y: ball.position.y,
-        z: ball.position.z
-    });
-
-    // Keep only the last 100 positions
-    if (particlePositions.length > particleCount) {
-        particlePositions.pop();
-    }
-
-    // Update particle system
-    for (let i = 0; i < particlePositions.length; i++) {
-        const pos = particlePositions[i];
-        particles[i * 3] = pos.x;
-        particles[i * 3 + 1] = pos.y;
-        particles[i * 3 + 2] = pos.z;
-    }
-
-    particleSystem.geometry.attributes.position.needsUpdate = true;
 }
 
 function resetGame() {
@@ -321,13 +283,13 @@ function resetGame() {
     resetBall(1);
     player1Paddle.position.x = 0;
     player2Paddle.position.x = 0;
-    particlePositions.length = 0;
 }
 
 function resetBall(direction) {
     ball.position.set(0, 0, 0);
-    const randomFactor = aiSeed ? new Math.seedrandom(aiSeed + Date.now()) : Math.random;
-    ballVelocity.set(BALL_SPEED * (randomFactor() - 0.5), 0, BALL_SPEED * direction);
+    const angle = (Math.random() - 0.5) * Math.PI / 4; // Random angle within 45 degrees
+    ballVelocity.x = BALL_SPEED * Math.sin(angle);
+    ballVelocity.z = BALL_SPEED * direction * Math.cos(angle);
 }
 
 function updateAI() {
@@ -370,7 +332,6 @@ function updateGame() {
     }
 
     updateAI();
-    updateParticles();
 
     // Move ball
     ball.position.add(ballVelocity);
@@ -380,24 +341,23 @@ function updateGame() {
         ballVelocity.x *= -1;
         playSound('wall');
     }
-    if (Math.abs(ball.position.y) > 5) {
-        ballVelocity.y *= -1;
-    }
 
     // Ball collision with paddles
     if (ball.position.z < player1Paddle.position.z + PADDLE_DEPTH &&
         ball.position.z > player1Paddle.position.z - PADDLE_DEPTH &&
         Math.abs(ball.position.x - player1Paddle.position.x) < PADDLE_WIDTH / 2) {
-        ballVelocity.z *= -1;
-        ballVelocity.x += (ball.position.x - player1Paddle.position.x) * 0.1;
+        ballVelocity.z *= -1.1; // Increase speed slightly
+        const paddleHitPosition = (ball.position.x - player1Paddle.position.x) / (PADDLE_WIDTH / 2);
+        ballVelocity.x = BALL_SPEED * paddleHitPosition;
         playSound('paddle');
     }
 
     if (ball.position.z > player2Paddle.position.z - PADDLE_DEPTH &&
         ball.position.z < player2Paddle.position.z + PADDLE_DEPTH &&
         Math.abs(ball.position.x - player2Paddle.position.x) < PADDLE_WIDTH / 2) {
-        ballVelocity.z *= -1;
-        ballVelocity.x += (ball.position.x - player2Paddle.position.x) * 0.1;
+        ballVelocity.z *= -1.1; // Increase speed slightly
+        const paddleHitPosition = (ball.position.x - player2Paddle.position.x) / (PADDLE_WIDTH / 2);
+        ballVelocity.x = BALL_SPEED * paddleHitPosition;
         playSound('paddle');
     }
 
@@ -413,6 +373,10 @@ function updateGame() {
         playSound('score');
         resetBall(-1);
     }
+
+    // Rotate ball for visual effect
+    ball.rotation.x += ballVelocity.z * 0.1;
+    ball.rotation.z -= ballVelocity.x * 0.1;
 }
 
 function playSound(soundName) {

@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Pong - Modern Gaming Experience</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 </head>
 <body>
     <div id="loading-overlay" class="loading-overlay">
@@ -19,17 +18,36 @@
     <div id="menu" class="menu">
         <h1>3D PONG</h1>
         <div class="menu-options">
-            <button id="singleplayer" class="glow-effect">Single Player</button>
-            <button id="multiplayer" class="glow-effect">Two Players</button>
+            <div class="mode-buttons">
+                <button id="singleplayer" class="glow-effect">Single Player</button>
+                <button id="multiplayer" class="glow-effect">Two Players</button>
+            </div>
             <div class="settings">
-                <label for="difficulty">AI Difficulty:</label>
-                <select id="difficulty">
-                    <option value="easy">Easy</option>
-                    <option value="medium" selected>Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
-                <label for="aiSeed">AI Seed (optional):</label>
-                <input type="number" id="aiSeed" placeholder="Enter seed number">
+                <div class="difficulty-container">
+                    <label for="difficulty">AI Difficulty:</label>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn" data-difficulty="easy">Easy</button>
+                        <button class="difficulty-btn active" data-difficulty="medium">Medium</button>
+                        <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-info">
+                <h3>Controls</h3>
+                <div class="control-group">
+                    <div class="control-item">
+                        <span class="key">A/D</span>
+                        <span class="description">Player 1 Movement</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">←/→</span>
+                        <span class="description">Player 2 Movement</span>
+                    </div>
+                    <div class="control-item">
+                        <span class="key">ESC</span>
+                        <span class="description">Pause Game</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -46,16 +64,22 @@
             </div>
         </div>
         <div id="game-container"></div>
-        <button id="pause-btn" class="game-button">Pause</button>
-        <button id="menu-btn" class="game-button">Menu</button>
+        <div class="game-controls">
+            <button id="pause-btn" class="game-button">
+                <span class="button-content">⏸️ Pause</span>
+            </button>
+            <button id="menu-btn" class="game-button">
+                <span class="button-content">🏠 Menu</span>
+            </button>
+        </div>
     </div>
 
     <div id="pause-menu" class="menu hidden">
         <h2>PAUSED</h2>
         <div class="menu-options">
-            <button id="resume" class="glow-effect">Resume</button>
-            <button id="restart" class="glow-effect">Restart</button>
-            <button id="quit" class="glow-effect">Back to Menu</button>
+            <button id="resume" class="glow-effect">▶️ Resume</button>
+            <button id="restart" class="glow-effect">🔄 Restart</button>
+            <button id="quit" class="glow-effect">🏠 Back to Menu</button>
         </div>
     </div>
 

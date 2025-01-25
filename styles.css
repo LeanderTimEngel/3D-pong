@@ -37,10 +37,24 @@ body {
     color: #fff;
 }
 
+.menu h3 {
+    font-size: 1.5rem;
+    margin: 1rem 0;
+    color: #00ff00;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .menu-options {
     display: flex;
     flex-direction: column;
-    gap: 1.2rem;
+    gap: 1.5rem;
+}
+
+.mode-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
 }
 
 button {
@@ -65,7 +79,7 @@ button:hover {
 }
 
 .settings {
-    margin-top: 2rem;
+    margin-top: 1rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -74,27 +88,71 @@ button:hover {
     border-radius: 10px;
 }
 
-.settings label {
+.difficulty-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.difficulty-container label {
     font-size: 1.1rem;
-    margin-bottom: 0.3rem;
     color: #00ff00;
     font-weight: 500;
 }
 
-.settings select, .settings input {
-    padding: 0.8rem;
-    font-size: 1rem;
-    background-color: rgba(0, 0, 0, 0.3);
-    color: white;
-    border: 1px solid rgba(0, 255, 0, 0.3);
-    border-radius: 8px;
-    transition: all 0.3s ease;
+.difficulty-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
 }
 
-.settings select:focus, .settings input:focus {
-    outline: none;
-    border-color: #00ff00;
-    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+.difficulty-btn {
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    background: rgba(0, 255, 0, 0.1);
+    color: #00ff00;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.difficulty-btn.active {
+    background: #00ff00;
+    color: #000;
+}
+
+.controls-info {
+    margin-top: 1rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.key {
+    background: rgba(0, 255, 0, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: #00ff00;
+    min-width: 50px;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.description {
+    color: #fff;
+    font-size: 1rem;
 }
 
 #game-container {
@@ -122,6 +180,12 @@ button:hover {
     backdrop-filter: blur(5px);
     border: 1px solid rgba(0, 255, 0, 0.1);
     min-width: 150px;
+    transition: all 0.3s ease;
+}
+
+.player-info:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 0, 0.2);
 }
 
 .player-name {
@@ -138,15 +202,25 @@ button:hover {
     text-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
 }
 
-.game-button {
+.game-controls {
     position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 1rem;
     z-index: 1;
+}
+
+.game-button {
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
     background: rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(0, 255, 0, 0.3);
     color: #00ff00;
     backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .game-button:hover {
@@ -154,21 +228,17 @@ button:hover {
     color: white;
 }
 
-#pause-btn {
-    top: 20px;
-    right: 20px;
-}
-
-#menu-btn {
-    top: 20px;
-    right: 140px;
+.button-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .hidden {
     display: none !important;
 }
 
-/* Loading indicator for sounds */
+/* Loading indicator */
 .loading-overlay {
     position: fixed;
     top: 0;
@@ -198,4 +268,33 @@ button:hover {
 
 @keyframes spin {
     to { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .menu {
+        padding: 2rem;
+        min-width: 280px;
+    }
+
+    .menu h1 {
+        font-size: 2.5rem;
+    }
+
+    .mode-buttons {
+        flex-direction: column;
+    }
+
+    #score-container {
+        gap: 100px;
+    }
+
+    .player-info {
+        padding: 0.8rem 1.5rem;
+        min-width: 120px;
+    }
+
+    .game-controls {
+        flex-direction: column;
+    }
 } 
